@@ -36,6 +36,48 @@ func newService() *consistent_cache.Service {
 	)
 }
 
+func Test_consistent_Cache(t *testing.T) {
+	service := consistent_cache.NewService(
+		// 缓存模块
+		redis.NewRedisCache(&redis.Config{
+			// redis 地址
+			Address: redisAddress,
+			// redis 密码
+			Password: redisPassword,
+		}),
+		// 数据库模块
+		mysql.NewDB(mysqlDSN),
+		// 缓存过期时长 120s
+		consistent_cache.WithCacheExpireSeconds(120),
+		// 缓存过期时间添加随机扰动系数，防缓存雪崩
+		consistent_cache.WithCacheExpireRandomMode(),
+		// 写缓存禁用机制延时 1s 启用
+		consistent_cache.WithDisableExpireSeconds(1),
+	)
+	ctx := context.Background()
+	exp := Example{
+		Key_: "test",
+		Data: "test",
+	}
+	// 写操作
+	if err := service.Put(ctx, &exp); err != nil {
+		t.Error(err)
+		return
+	}
+
+	// 读操作
+	expReceiver := Example{
+		Key_: "test",
+	}
+	if _, err := service.Get(ctx, &expReceiver); err != nil {
+		t.Error(err)
+		return
+	}
+
+	// 读取到的数据结果 以及是否使用到缓存
+	t.Logf("read data: %s, ", expReceiver.Data)
+}
+
 // 验证点：1 数据正确性 2 缓存使用率
 func Test_Consistent_Cache_Correct(t *testing.T) {
 	// 构造缓存一致性服务实例
