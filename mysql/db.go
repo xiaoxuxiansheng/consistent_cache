@@ -31,15 +31,16 @@ func (d *DB) Put(ctx context.Context, obj consistent_cache.Object) error {
 		db = db.Table(tabler.TableName())
 	}
 
-	// upsert 操作
+	// 此处通过两个非原子性动作实现 upsert 效果：
+	// 1 尝试创建记录
+	// 2 倘若发生唯一键冲突，则改为执行更新操作
 	err := db.WithContext(ctx).Create(obj).Error
 	if err == nil {
 		return nil
 	}
-	// 是否为唯一键冲突
-	flag := IsDuplicateEntryErr(err)
-	// 唯一键冲突，则改为更新操作
-	if flag {
+
+	// 判断是否为唯一键冲突，若是的话，则改为更新操作
+	if IsDuplicateEntryErr(err) {
 		return db.WithContext(ctx).Debug().Where(fmt.Sprintf("`%s` = ?", obj.KeyColumn()), obj.Key()).Updates(obj).Error
 	}
 	// 其他错误直接返回
