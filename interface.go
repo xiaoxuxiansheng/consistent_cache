@@ -35,13 +35,12 @@ type DB interface {
 	Get(ctx context.Context, obj Object) error
 }
 
+// 每次读写操作时，操作的一笔数据记录
 type Object interface {
 	// 获取 key 对应的字段名
 	KeyColumn() string
 	// 获取 key 对应的值
 	Key() string
-	// 数据对应的字段名
-	DataColumn() []string
 
 	// 将 object 序列化成字符串
 	Write() (string, error)
@@ -49,6 +48,7 @@ type Object interface {
 	Read(body string) error
 }
 
+// 日志打印输出模块
 type Logger interface {
 	Errorf(format string, v ...interface{})
 	Warnf(format string, v ...interface{})
