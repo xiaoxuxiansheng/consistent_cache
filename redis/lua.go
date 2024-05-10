@@ -1,10 +1,11 @@
-package consistent_cache
+package redis
 
 const (
+	// 通过 lua 脚本确保在 disable key 不存在时，才执行 key value 对写入
 	LuaCheckEnableAndWriteCache = `
-	local enable_key = KEYS[1];
-	local enable_flag = redis.call("get",enable_key);
-	if enable_flag then
+	local disable_key = KEYS[1];
+	local disable_flag = redis.call("get",disable_key);
+	if disable_flag then
 	    return 0;
 	end
 	local key = KEYS[2];
